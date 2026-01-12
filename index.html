@@ -1,0 +1,1763 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analisis Struktur CPU dan Siklus Instruksi</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Poppins', sans-serif;
+            background-color: #f0f6ff;
+            color: #333;
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        header {
+            position: sticky;
+            top: 0;
+            background: linear-gradient(to right, #1976d2, #42a5f5);
+            padding: 15px 50px;
+            /* PADDING DIUBAH: Menambah jarak di tepi kiri dan kanan header */
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            backdrop-filter: blur(6px);
+            z-index: 20;
+        }
+
+        header a {
+            color: white;
+            text-decoration: none;
+            font-weight: 500;
+            padding: 15px 15px;
+            border-radius: 5px;
+            transition: background 0.3s, transform 0.2s;
+            cursor: pointer;
+        }
+
+        header a:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        /* Halaman Style - SUDAH DIMODIFIKASI UNTUK FULL SCREEN */
+        .page {
+            display: none;
+            max-width: 100%;
+            margin: 0;
+            margin-top: 0px;
+            background: white;
+            padding: 30px 50px;
+            border-radius: 0;
+            box-shadow: none;
+            animation: fadeIn 0.6s ease-in-out;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        h2 {
+            color: #1565c0;
+            border-left: 5px solid #42a5f5;
+            padding-left: 10px;
+        }
+
+        h3 {
+            margin-top: 0;
+        }
+
+        img {
+            max-width: 100%;
+            display: block;
+            margin: 20px auto;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+        }
+
+        ul,
+        ol {
+            padding-left: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            overflow: hidden;
+            border-radius: 8px;
+        }
+
+        th,
+        td {
+            padding: 12px;
+            text-align: center;
+            border-bottom: 1px solid #eee;
+        }
+
+        th {
+            background: #e3f2fd;
+        }
+
+        tr:nth-child(even) {
+            background: #f8fbff;
+        }
+
+        tr:hover {
+            background: #e0f0ff;
+        }
+
+        /* Animasi Fade */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Floating Navigation */
+        .nav-floating {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            gap: 10px;
+            z-index: 100;
+        }
+
+        .nav-floating button {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            border: 1px solid #ffffff55;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(8px);
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            transition: 0.3s;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+        }
+
+        .nav-floating button:hover {
+            background: rgba(66, 165, 245, 0.5);
+            transform: translateY(-2px);
+        }
+
+        /* Grid Foto CPU */
+        .grid-photos {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .grid-photos img {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .grid-photos img:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.25);
+        }
+
+        .cpu-card-container {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .cpu-card {
+            width: 200px;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            overflow: hidden;
+            text-align: center;
+            background: #f9f9f9;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .cpu-card img {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+        }
+
+        .cpu-card p {
+            padding: 10px;
+            font-weight: bold;
+        }
+    </style>
+    <style>
+        .video-container {
+            position: relative;
+            padding-bottom: 56.25%;
+            /* Rasio 16:9 */
+            height: 0;
+            overflow: hidden;
+            max-width: 100%;
+            border-radius: 10px;
+            margin-top: 15px;
+        }
+
+        .video-container iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Layout Video + Deskripsi */
+        .video-wrapper {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 25px;
+            margin-top: 20px;
+        }
+
+        .video-wrapper video {
+            width: 45%;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+        }
+
+        .video-description {
+            width: 50%;
+            font-size: 15px;
+            line-height: 1.6;
+            text-align: justify;
+        }
+
+        .video-description h3 {
+            color: #1565c0;
+            margin-bottom: 8px;
+        }
+
+        /* Navbar layout: kiri link, kanan search */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 40px;
+        }
+
+        /* Bagian link navigasi */
+        .nav-links {
+            display: flex;
+            gap: 40px;
+            /* NILAI BARU: Jarak antar menu lebih besar */
+        }
+
+        /* ================= SEARCH ================= */
+        .search-container {
+            position: relative;
+        }
+
+        .search-form {
+            display: flex;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.25);
+            padding: 5px 10px;
+            border-radius: 30px;
+        }
+
+        .search-input {
+            border: none;
+            outline: none;
+            background: transparent;
+            color: white;
+            padding: 6px 10px;
+            font-size: 14px;
+            width: 140px;
+        }
+
+        .search-input::placeholder {
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .search-button {
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+            font-size: 18px;
+        }
+
+        /* ================= SUGGESTION ================= */
+        .suggestion-box {
+            position: absolute;
+            top: 45px;
+            right: 0;
+            width: 220px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+            list-style: none;
+            padding: 5px 0;
+            display: none;
+            z-index: 9999;
+        }
+
+        .suggestion-box li {
+            padding: 10px 14px;
+            cursor: pointer;
+            transition: 0.2s;
+            font-size: 14px;
+        }
+
+        .suggestion-box li:hover {
+            background: #e3f2fd;
+            color: #1565c0;
+        }
+
+        /* ===== BUTTON JENIS CPU ===== */
+        .tab-container {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 25px;
+        }
+
+        .tab-container button {
+            padding: 14px 28px;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 30px;
+            border: none;
+            background: linear-gradient(135deg, #2196f3, #42a5f5);
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 6px 12px rgba(33, 150, 243, 0.3);
+        }
+
+        .tab-container button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(33, 150, 243, 0.4);
+        }
+
+        .tab-container button:active {
+            transform: scale(0.97);
+        }
+
+        /* ===== KONTEN CPU ===== */
+        .content-box {
+            padding: 24px;
+            line-height: 1.7;
+            font-size: 15px;
+        }
+
+        /* ===== JARAK ANTAR BAGIAN ===== */
+        .jenis-cpu {
+            margin-bottom: 60px;
+        }
+
+        .struktur-cpu {
+            margin-top: 40px;
+        }
+
+        /* KOTAK BACKGROUND UTAMA */
+        .box-wrapper {
+            background: #f4f9ff;
+            border-radius: 18px;
+            padding: 30px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.06);
+        }
+
+        /* Biar judul nggak nempel */
+        .box-wrapper h2 {
+            margin-top: 0;
+            margin-bottom: 20px;
+        }
+
+        /* Jarak bawah antar section */
+        .jenis-cpu {
+            margin-bottom: 25px;
+        }
+
+        /* ===== CHAT BUTTON ===== */
+        #chat-btn {
+            position: fixed;
+            bottom: 25px;
+            right: 25px;
+            background: #1976d2;
+            color: white;
+            font-size: 26px;
+            padding: 14px;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+        }
+
+        /* ===== CHAT BOX ===== */
+        #chatbox {
+            position: fixed;
+            bottom: 90px;
+            right: 25px;
+            width: 300px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 18px;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* HEADER */
+        .chat-header {
+            background: #0d47a1;
+            color: white;
+            padding: 12px;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        /* BODY */
+        .chat-body {
+            padding: 12px;
+            height: 220px;
+            overflow-y: auto;
+            font-size: 14px;
+        }
+
+        /* MESSAGE */
+        .bot {
+            background: #e3f2fd;
+            padding: 8px 10px;
+            border-radius: 10px;
+            margin-bottom: 8px;
+        }
+
+        .user {
+            background: #1976d2;
+            color: white;
+            padding: 8px 10px;
+            border-radius: 10px;
+            margin-bottom: 8px;
+            text-align: right;
+        }
+
+        /* INPUT */
+        .chat-input {
+            display: flex;
+            border-top: 1px solid #ccc;
+        }
+
+        .chat-input input {
+            flex: 1;
+            padding: 8px;
+            border: none;
+            outline: none;
+        }
+
+        .chat-input button {
+            background: #1976d2;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <div class="nav-links">
+            <a onclick="goToPage(0)">Beranda</a>
+            <a onclick="goToPage(1)">Sejarah</a>
+            <a onclick="goToPage(2)">Struktur CPU</a>
+            <a onclick="goToPage(3)">Perbandingan</a>
+            <a onclick="goToPage(4)">Quiz</a>
+        </div>
+
+        <div class="search-container">
+            <form action="#" class="search-form" onsubmit="return false;">
+                <input type="text" placeholder="Cari..." id="searchInput" class="search-input"
+                    oninput="showSuggestions(this.value)">
+                <button type="submit" class="search-button">🔍</button>
+            </form>
+            <ul id="suggestionBox" class="suggestion-box"></ul>
+        </div>
+    </header>
+    <div class="page active" id="page0">
+        <h2>Beranda</h2>
+        <h3>Selamat datang di analisis CPU KLASIK DAN MODERN. Berikut koleksi gambar CPU</h3>
+
+        <div class="grid-photos">
+            <img src="assets/foto1.webp">
+            <img src="assets/foto2.webp">
+            <img src="assets/foto3.jpg">
+            <img src="assets/foto4.jpg">
+        </div>
+
+        <div style="
+    background: linear-gradient(135deg, #e3f2fd, #ffffff);
+    padding: 20px 25px;
+    border-radius: 16px;
+    margin-bottom: 20px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+    border-left: 6px solid #2196f3;
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+    ">
+            <h3 style="
+        margin-top: 0;
+        margin-bottom: 10px;
+        color: #0d47a1;
+        font-size: 22px;
+    ">
+                💻 Pengertian CPU
+            </h3>
+
+            <p style="
+        margin: 0;
+        color: #333;
+        line-height: 1.7;
+        font-size: 15px;
+        text-align: justify;
+    ">
+                <strong>CPU (Central Processing Unit)</strong> merupakan <em>“otak”</em> komputer yang berperan penting
+                dalam
+                memproses seluruh instruksi dari perangkat lunak. CPU melakukan perhitungan,
+                mengatur operasi sistem, serta mengendalikan aktivitas komponen komputer lainnya.
+                Tugas utamanya adalah mengolah data menjadi informasi dan menjalankan perintah
+                dengan mengeksekusi instruksi program secara cepat dan terkoordinasi.
+            </p>
+        </div>
+
+        <section class="jenis-cpu">
+            <div class="box-wrapper">
+
+                <h2>🔍 Jenis CPU</h2>
+
+                <div class="tab-container">
+                    <button onclick="showCPU('klasik')">CPU Klasik</button>
+                    <button onclick="showCPU('modern')">CPU Modern</button>
+                </div>
+
+                <div id="cpuContent" class="content-box">
+                    <p>Klik salah satu jenis CPU untuk melihat penjelasan.</p>
+                </div>
+
+                <div class="progress-box">
+                    <div id="progressBar"></div>
+                </div>
+
+            </div>
+        </section>
+        <div style="
+    background: linear-gradient(135deg, #f0f6ff, #ffffff);
+    padding: 25px;
+    border-radius: 18px;
+    margin-bottom: 20px;
+    box-shadow: 0 8px 22px rgba(0,0,0,0.08);
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+    ">
+            <h3 style="
+        margin-top: 0;
+        margin-bottom: 20px;
+        color: #0d47a1;
+        font-size: 22px;
+        text-align: center;
+    ">
+                🧩 Struktur CPU
+            </h3>
+
+            <!-- CPU BOX -->
+            <div style="
+        border: 2px dashed #90caf9;
+        border-radius: 16px;
+        padding: 20px;
+        background: #f9fcff;
+    ">
+
+                <!-- ALU & CU -->
+                <div style="display: flex; gap: 15px; margin-bottom: 15px;">
+                    <div style="
+                flex: 1;
+                background: #e3f2fd;
+                padding: 15px;
+                border-radius: 12px;
+                text-align: center;
+            ">
+                        ⚙️ <b>ALU</b><br>
+                        <span style="font-size: 14px;">Operasi aritmatika & logika</span>
+                    </div>
+
+                    <div style="
+                flex: 1;
+                background: #e1f5fe;
+                padding: 15px;
+                border-radius: 12px;
+                text-align: center;
+            ">
+                        🧠 <b>CU</b><br>
+                        <span style="font-size: 14px;">Mengatur & mengendalikan instruksi</span>
+                    </div>
+                </div>
+
+                <!-- REGISTER & CACHE -->
+                <div style="display: flex; gap: 15px; margin-bottom: 15px;">
+                    <div style="
+                flex: 1;
+                background: #ede7f6;
+                padding: 15px;
+                border-radius: 12px;
+                text-align: center;
+            ">
+                        🗂️ <b>Register</b><br>
+                        <span style="font-size: 14px;">Penyimpanan data sangat cepat</span>
+                    </div>
+
+                    <div style="
+                flex: 1;
+                background: #e8f5e9;
+                padding: 15px;
+                border-radius: 12px;
+                text-align: center;
+            ">
+                        ⚡ <b>Cache</b><br>
+                        <span style="font-size: 14px;">Mempercepat akses data</span>
+                    </div>
+                </div>
+
+                <!-- BUS -->
+                <div style="
+            background: #fff3e0;
+            padding: 15px;
+            border-radius: 12px;
+            text-align: center;
+        ">
+                    🔗 <b>Bus</b> — Jalur penghubung data antar komponen CPU
+                </div>
+
+            </div>
+        </div>
+
+        <div style="
+    background: linear-gradient(135deg, #e3f2fd, #ffffff);
+    padding: 25px;
+    border-radius: 18px;
+    margin-bottom: 20px;
+    box-shadow: 0 8px 22px rgba(0,0,0,0.08);
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+">
+            <h3 style="
+        margin-top: 0;
+        margin-bottom: 20px;
+        color: #0d47a1;
+        font-size: 22px;
+        text-align: center;
+    ">
+                🔄 Simulasi Proses Kerja CPU
+            </h3>
+
+            <div style="display: flex; flex-direction: column; gap: 15px;">
+
+                <div style="
+            background: #e1f5fe;
+            padding: 15px 20px;
+            border-radius: 14px;
+            border-left: 6px solid #0288d1;
+        ">
+                    <b>1. Fetch</b><br>
+                    <span style="font-size: 14px;">Mengambil instruksi dari memori utama</span>
+                </div>
+
+                <div style="text-align:center; font-size:20px;">⬇️</div>
+
+                <div style="
+            background: #ede7f6;
+            padding: 15px 20px;
+            border-radius: 14px;
+            border-left: 6px solid #5e35b1;
+        ">
+                    <b>2. Decode</b><br>
+                    <span style="font-size: 14px;">Menerjemahkan instruksi agar dapat diproses</span>
+                </div>
+
+                <div style="text-align:center; font-size:20px;">⬇️</div>
+
+                <div style="
+            background: #e8f5e9;
+            padding: 15px 20px;
+            border-radius: 14px;
+            border-left: 6px solid #2e7d32;
+        ">
+                    <b>3. Execute</b><br>
+                    <span style="font-size: 14px;">Menjalankan instruksi sesuai perintah</span>
+                </div>
+
+            </div>
+        </div>
+
+        <div style="
+    background: linear-gradient(135deg, #f0f6ff, #ffffff);
+    padding: 25px;
+    border-radius: 18px;
+    margin-bottom: 20px;
+    box-shadow: 0 8px 22px rgba(0,0,0,0.08);
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+">
+            <h3 style="
+        margin-top: 0;
+        margin-bottom: 20px;
+        color: #0d47a1;
+        font-size: 22px;
+        text-align: center;
+    ">
+                📋 Perbandingan CPU Klasik dan Modern
+            </h3>
+
+            <table style="
+        width: 100%;
+        border-collapse: collapse;
+        overflow: hidden;
+        border-radius: 12px;
+        font-size: 14px;
+    ">
+                <tr style="background:#1976d2; color:white;">
+                    <th style="padding:12px;">Aspek</th>
+                    <th style="padding:12px;">CPU Klasik</th>
+                    <th style="padding:12px;">CPU Modern</th>
+                </tr>
+
+                <tr style="background:#e3f2fd;">
+                    <td style="padding:12px;"><b>Jumlah Core</b></td>
+                    <td style="padding:12px;">Single Core</td>
+                    <td style="padding:12px;">Multi Core (4–16)</td>
+                </tr>
+
+                <tr>
+                    <td style="padding:12px;"><b>Kecepatan</b></td>
+                    <td style="padding:12px;">MHz</td>
+                    <td style="padding:12px;">GHz</td>
+                </tr>
+
+                <tr style="background:#e3f2fd;">
+                    <td style="padding:12px;"><b>Arsitektur</b></td>
+                    <td style="padding:12px;">32-bit</td>
+                    <td style="padding:12px;">64-bit</td>
+                </tr>
+
+                <tr>
+                    <td style="padding:12px;"><b>Konsumsi Daya</b></td>
+                    <td style="padding:12px;">Boros & panas</td>
+                    <td style="padding:12px;">Lebih hemat energi</td>
+                </tr>
+            </table>
+        </div>
+    </div>
+
+    <div class="page" id="page1">
+
+        <style>
+            /* ===== BACKGROUND SECTION ===== */
+            #page1 {
+                background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+                padding: 40px 20px;
+            }
+
+            /* ===== CONTAINER ===== */
+            .history-wrap {
+                max-width: 1100px;
+                margin: auto;
+            }
+
+            /* ===== TITLE ===== */
+            .history-header {
+                text-align: center;
+                margin-bottom: 50px;
+            }
+
+            .history-header h2 {
+                font-size: 32px;
+                color: #0d47a1;
+                margin-bottom: 10px;
+            }
+
+            .history-header p {
+                font-size: 16px;
+                color: #333;
+                max-width: 700px;
+                margin: auto;
+            }
+
+            /* ===== CARD ===== */
+            .history-card {
+                display: grid;
+                grid-template-columns: 1fr 1.2fr;
+                gap: 25px;
+                background: rgba(255, 255, 255, 0.75);
+                backdrop-filter: blur(10px);
+                border-radius: 18px;
+                padding: 25px;
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+                margin-bottom: 35px;
+                transition: transform 0.4s ease, box-shadow 0.4s ease;
+            }
+
+            .history-card:hover {
+                transform: translateY(-10px);
+                box-shadow: 0 20px 45px rgba(13, 71, 161, 0.35);
+            }
+
+            /* ===== IMAGE ===== */
+            .history-img img {
+                width: 100%;
+                height: 220px;
+                object-fit: cover;
+                border-radius: 15px;
+            }
+
+            /* ===== CONTENT ===== */
+            .history-text h3 {
+                color: #1976d2;
+                margin-top: 0;
+                font-size: 22px;
+            }
+
+            .history-text p {
+                text-align: justify;
+                line-height: 1.7;
+                color: #222;
+            }
+
+            /* ===== BADGE ===== */
+            .badge {
+                display: inline-block;
+                background: #1976d2;
+                color: white;
+                padding: 5px 12px;
+                border-radius: 20px;
+                font-size: 13px;
+                margin-bottom: 10px;
+            }
+
+            /* ===== RESPONSIVE ===== */
+            @media (max-width: 768px) {
+                .history-card {
+                    grid-template-columns: 1fr;
+                    text-align: center;
+                }
+
+                .history-text p {
+                    text-align: justify;
+                }
+
+                .history-img img {
+                    height: 200px;
+                }
+            }
+        </style>
+
+        <div class="history-wrap">
+
+            <div class="history-header">
+                <h2>Sejarah CPU Generasi Pertama</h2>
+                <p>
+                    Perjalanan awal perkembangan CPU yang menjadi fondasi komputer modern
+                </p>
+            </div>
+
+            <!-- CARD 1 -->
+            <div class="history-card">
+                <div class="history-img">
+                    <img src="assets/generasi pertama.jpg" alt="ENIAC">
+                </div>
+                <div class="history-text">
+                    <span class="badge">1940–1950</span>
+                    <h3>Awal Mula CPU</h3>
+                    <p>
+                        CPU generasi pertama muncul pada era 1940–1950-an dan menggunakan
+                        <b>tabung vakum</b> sebagai komponen utama. Teknologi ini menjadi
+                        tonggak awal perkembangan komputer digital.
+                    </p>
+                </div>
+            </div>
+
+            <!-- CARD 2 -->
+            <div class="history-card">
+                <div class="history-img">
+                    <img src="assets/tabung vakum.jpg" alt="Vacuum Tube">
+                </div>
+                <div class="history-text">
+                    <span class="badge">Teknologi Utama</span>
+                    <h3>Tabung Vakum</h3>
+                    <p>
+                        Tabung vakum berfungsi sebagai saklar elektronik, namun memiliki
+                        banyak kelemahan seperti <b>boros listrik</b>, <b>panas tinggi</b>,
+                        dan <b>mudah rusak</b>.
+                    </p>
+                </div>
+            </div>
+
+            <!-- CARD 3 -->
+            <div class="history-card">
+                <div class="history-img">
+                    <img src="assets/eniac dan univac.jpg" alt="UNIVAC">
+                </div>
+                <div class="history-text">
+                    <span class="badge">Contoh</span>
+                    <h3>ENIAC & UNIVAC</h3>
+                    <p>
+                        Contoh CPU generasi pertama adalah <b>ENIAC</b> dan <b>UNIVAC</b>.
+                        Komputer ini digunakan untuk kebutuhan militer, sensus penduduk,
+                        dan penelitian ilmiah berskala besar.
+                    </p>
+                </div>
+            </div>
+
+            <!-- CARD 4 -->
+            <div class="history-card">
+                <div class="history-img">
+                    <img src="assets/computer room.jpg" alt="Computer Room">
+                </div>
+                <div class="history-text">
+                    <span class="badge">Keterbatasan</span>
+                    <h3>Alasan Berkembang ke Generasi Selanjutnya</h3>
+                    <p>
+                        CPU generasi pertama berukuran sangat besar, mahal, dan hanya mampu
+                        mengeksekusi satu instruksi dalam satu waktu. Keterbatasan ini
+                        mendorong lahirnya CPU generasi kedua.
+                    </p>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="page" id="page2">
+
+        <style>
+            /* ===== SECTION ===== */
+            #page2 {
+                background: linear-gradient(135deg, #e8f1ff, #cfe3ff);
+                padding: 40px 20px;
+            }
+
+            /* ===== HEADER ===== */
+            .cpu-header {
+                text-align: center;
+                margin-bottom: 40px;
+            }
+
+            .cpu-header h2 {
+                font-size: 32px;
+                color: #0d47a1;
+                margin-bottom: 10px;
+            }
+
+            .cpu-header p {
+                max-width: 700px;
+                margin: auto;
+                color: #333;
+            }
+
+            /* ===== GRID ===== */
+            .cpu-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+                gap: 25px;
+                max-width: 1000px;
+                margin: auto;
+            }
+
+            /* ===== CARD ===== */
+            .cpu-card {
+                background: rgba(255, 255, 255, 0.8);
+                backdrop-filter: blur(8px);
+                border-radius: 18px;
+                padding: 22px;
+                box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+                text-align: center;
+                transition: transform 0.4s ease, box-shadow 0.4s ease;
+            }
+
+            .cpu-card:hover {
+                transform: translateY(-10px);
+                box-shadow: 0 20px 40px rgba(13, 71, 161, 0.35);
+            }
+
+            /* ===== ICON ===== */
+            .cpu-icon {
+                font-size: 42px;
+                margin-bottom: 15px;
+            }
+
+            /* ===== TEXT ===== */
+            .cpu-card h3 {
+                color: #1976d2;
+                margin-bottom: 8px;
+            }
+
+            .cpu-card p {
+                font-size: 14.5px;
+                line-height: 1.6;
+                color: #222;
+            }
+
+            /* ===== VIDEO ===== */
+            .video-wrapper {
+                margin-top: 50px;
+                display: flex;
+                justify-content: center;
+            }
+
+            /* ===== RESPONSIVE ===== */
+            @media (max-width: 768px) {
+                .cpu-header h2 {
+                    font-size: 26px;
+                }
+            }
+        </style>
+
+        <div class="cpu-header">
+            <h2>Struktur CPU</h2>
+            <p>
+                CPU terdiri dari beberapa komponen utama yang saling terhubung
+                untuk memproses data dan instruksi secara efisien.
+            </p>
+        </div>
+
+        <div class="cpu-grid">
+
+            <div class="cpu-card">
+                <div class="cpu-icon">🧮</div>
+                <h3>ALU</h3>
+                <p>
+                    <b>Arithmetic Logic Unit</b> bertugas melakukan operasi
+                    aritmatika dan logika seperti penjumlahan, perbandingan,
+                    dan operasi AND/OR.
+                </p>
+            </div>
+
+            <div class="cpu-card">
+                <div class="cpu-icon">🎛️</div>
+                <h3>Control Unit</h3>
+                <p>
+                    <b>Control Unit</b> mengatur alur eksekusi instruksi dan
+                    mengoordinasikan kerja seluruh komponen CPU.
+                </p>
+            </div>
+
+            <div class="cpu-card">
+                <div class="cpu-icon">⚡</div>
+                <h3>Register</h3>
+                <p>
+                    Register adalah penyimpanan kecil berkecepatan tinggi
+                    yang digunakan untuk menyimpan data sementara saat proses berlangsung.
+                </p>
+            </div>
+
+            <div class="cpu-card">
+                <div class="cpu-icon">🚀</div>
+                <h3>Cache</h3>
+                <p>
+                    Cache berfungsi menyimpan data yang sering digunakan
+                    agar CPU dapat mengaksesnya lebih cepat dibanding RAM.
+                </p>
+            </div>
+
+            <div class="cpu-card">
+                <div class="cpu-icon">🔗</div>
+                <h3>Bus</h3>
+                <p>
+                    Bus adalah jalur komunikasi yang menghubungkan CPU
+                    dengan komponen lain seperti memori dan perangkat input/output.
+                </p>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="page" id="page3">
+
+        <style>
+            /* ===== SECTION ===== */
+            #page3 {
+                background: linear-gradient(135deg, #f5f9ff, #e3f2fd);
+                padding: 60px 20px;
+                color: #1a237e;
+            }
+
+            /* ===== CONTAINER ===== */
+            .cpu-modern-wrap {
+                max-width: 1100px;
+                margin: auto;
+            }
+
+            /* ===== HEADER ===== */
+            .cpu-modern-header {
+                text-align: center;
+                margin-bottom: 50px;
+            }
+
+            .cpu-modern-header h2 {
+                font-size: 34px;
+                margin-bottom: 10px;
+            }
+
+            .cpu-modern-header p {
+                max-width: 720px;
+                margin: auto;
+                color: #333;
+            }
+
+            /* ===== MAIN CARD ===== */
+            .cpu-main-card {
+                display: grid;
+                grid-template-columns: 1fr 1.2fr;
+                gap: 30px;
+                background: rgba(255, 255, 255, 0.92);
+                backdrop-filter: blur(8px);
+                border-radius: 22px;
+                padding: 30px;
+                box-shadow: 0 20px 45px rgba(33, 150, 243, 0.18);
+                margin-bottom: 60px;
+            }
+
+            /* ===== IMAGE ===== */
+            .cpu-image img {
+                width: 100%;
+                border-radius: 18px;
+                object-fit: cover;
+            }
+
+            /* ===== INFO ===== */
+            .cpu-info h3 {
+                margin-top: 0;
+                font-size: 26px;
+                color: #0d47a1;
+            }
+
+            .specs {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 12px;
+                margin: 20px 0;
+            }
+
+            .spec {
+                background: #1976d2;
+                color: white;
+                padding: 8px 14px;
+                border-radius: 20px;
+                font-size: 14px;
+            }
+
+            /* ===== TEXT ===== */
+            .cpu-info p {
+                line-height: 1.7;
+                color: #333;
+            }
+
+            /* ===== COMPARISON ===== */
+            .compare-title {
+                text-align: center;
+                font-size: 26px;
+                margin-bottom: 25px;
+                color: #0d47a1;
+            }
+
+            .compare-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+                gap: 25px;
+            }
+
+            .compare-card {
+                background: rgba(255, 255, 255, 0.9);
+                border-radius: 20px;
+                padding: 25px;
+                box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12);
+                transition: transform 0.4s ease, box-shadow 0.4s ease;
+            }
+
+            .compare-card:hover {
+                transform: translateY(-10px);
+                box-shadow: 0 20px 45px rgba(25, 118, 210, 0.25);
+            }
+
+            .compare-card h4 {
+                margin-top: 0;
+                color: #1976d2;
+            }
+
+            .compare-card p {
+                color: #333;
+            }
+
+            /* ===== RESPONSIVE ===== */
+            @media (max-width: 900px) {
+                .cpu-main-card {
+                    grid-template-columns: 1fr;
+                    text-align: center;
+                }
+            }
+        </style>
+
+        <div class="cpu-modern-wrap">
+
+            <!-- ===== HEADER ===== -->
+            <div class="cpu-modern-header">
+                <h2>CPU Klasik dan CPU Modern</h2>
+                <p>
+                    CPU mengalami perkembangan besar dari generasi klasik
+                    yang sederhana hingga CPU modern yang cepat, kecil,
+                    dan sangat efisien.
+                </p>
+            </div>
+
+            <!-- ===== CPU MODERN ===== -->
+            <div class="cpu-main-card">
+                <div class="cpu-image">
+                    <img src="assets/cpu modern.webp" alt="CPU Modern">
+                </div>
+                <div class="cpu-info">
+                    <h3>CPU Modern</h3>
+                    <div class="specs">
+                        <span class="spec">Multi-Core (4–16 Core)</span>
+                        <span class="spec">3–5 GHz</span>
+                        <span class="spec">Teknologi 7–3 nm</span>
+                        <span class="spec">Cache Hingga 64 MB</span>
+                        <span class="spec">Hemat Daya</span>
+                    </div>
+                    <p>
+                        CPU modern seperti <b>Intel Core</b> dan <b>AMD Ryzen</b>
+                        menggunakan miliaran transistor dalam satu chip kecil,
+                        mendukung multitasking, komputasi berat,
+                        serta aplikasi AI dan game modern.
+                    </p>
+                </div>
+            </div>
+
+            <!-- ===== CPU KLASIK ===== -->
+            <div class="cpu-main-card">
+                <div class="cpu-image">
+                    <img src="assets/foto5.webp" alt="CPU Klasik">
+                </div>
+                <div class="cpu-info">
+                    <h3>CPU Klasik</h3>
+                    <div class="specs">
+                        <span class="spec" style="background:#546e7a;">Single Core</span>
+                        <span class="spec" style="background:#546e7a;">MHz</span>
+                        <span class="spec" style="background:#546e7a;">Ukuran Besar</span>
+                        <span class="spec" style="background:#546e7a;">Tanpa Cache</span>
+                        <span class="spec" style="background:#546e7a;">Boros Daya</span>
+                    </div>
+                    <p>
+                        CPU klasik seperti <b>ENIAC</b> dan <b>Intel 4004</b>
+                        masih memiliki keterbatasan besar.
+                        Instruksi dijalankan satu per satu dengan
+                        konsumsi daya tinggi dan ukuran fisik besar.
+                    </p>
+                </div>
+            </div>
+
+            <!-- ===== PERBANDINGAN ===== -->
+            <h3 class="compare-title">Perbandingan CPU Klasik vs CPU Modern</h3>
+
+            <div class="compare-grid">
+
+                <div class="compare-card">
+                    <h4>⚡ Performa</h4>
+                    <p>
+                        CPU modern mampu memproses banyak instruksi secara paralel,
+                        sedangkan CPU klasik hanya satu instruksi dalam satu waktu.
+                    </p>
+                </div>
+
+                <div class="compare-card">
+                    <h4>📏 Ukuran</h4>
+                    <p>
+                        CPU klasik berukuran besar,
+                        sedangkan CPU modern sangat kecil dan ringkas.
+                    </p>
+                </div>
+
+                <div class="compare-card">
+                    <h4>🔋 Konsumsi Daya</h4>
+                    <p>
+                        CPU modern lebih hemat energi,
+                        CPU klasik membutuhkan daya besar dan panas tinggi.
+                    </p>
+                </div>
+
+                <div class="compare-card">
+                    <h4>🧠 Teknologi</h4>
+                    <p>
+                        CPU modern menggunakan teknologi nanometer,
+                        CPU klasik masih berbasis tabung vakum dan transistor awal.
+                    </p>
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+
+    <div class="page" id="page4">
+        <style>
+            .quiz-box {
+                background: rgba(143, 185, 205, 0.9);
+                width: 520px;
+                margin: auto;
+                padding: 20px;
+                border-radius: 12px;
+                box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
+                text-align: center;
+            }
+
+            #quiz {
+                animation: slideQuiz 0.5s;
+                text-align: left;
+                min-height: 180px;
+            }
+
+            @keyframes slideQuiz {
+                from {
+                    opacity: 0;
+                    transform: translateX(40px);
+                }
+
+                to {
+                    opacity: 1;
+                    transform: translateX(0);
+                }
+            }
+
+            .quiz-btn {
+                padding: 8px 15px;
+                border: none;
+                background: #1976d2;
+                color: white;
+                border-radius: 5px;
+                margin-top: 15px;
+                cursor: pointer;
+            }
+
+            .quiz-btn:hover {
+                background: #1565c0;
+            }
+
+            #startBtn {
+                background: #4caf50;
+                font-size: 1.1em;
+                padding: 10px 20px;
+            }
+
+            #startBtn:hover {
+                background: #388e3c;
+            }
+
+            #timer {
+                font-weight: bold;
+                color: #d32f2f;
+            }
+
+            #nextBtn,
+            #ulang {
+                display: none;
+            }
+        </style>
+        <audio id="klik" src="https://www.soundjay.com/buttons/sounds/button-09.mp3"></audio>
+        <audio id="benar" src="https://www.soundjay.com/buttons/sounds/button-3.mp3"></audio>
+        <audio id="salah" src="https://www.soundjay.com/buttons/sounds/button-10.mp3"></audio>
+        <audio id="selesai" src="https://www.soundjay.com/human/sounds/applause-8.mp3"></audio>
+
+        <div class="quiz-box">
+            <h2>Quiz CPU Klasik & CPU Modern</h2>
+            <p>Waktu: <span id="timer">180</span> detik</p>
+
+            <div id="quiz">
+                <p>
+                    <center>Tekan tombol di bawah untuk memulai quiz.</center>
+                </p>
+            </div>
+
+            <button id="startBtn" class="quiz-btn" onclick="mulaiQuiz()">Mulai Quiz</button>
+            <button id="nextBtn" class="quiz-btn" onclick="next()">Next</button>
+            <button id="ulang" class="quiz-btn" onclick="ulangQuiz()">Ulangi Quiz</button>
+
+            <h3 id="hasil"></h3>
+        </div>
+
+        <script>
+            let waktu = 180;
+            let skor = 0;
+            let index = 0;
+            let interval;
+
+            // ================== DAFTAR SOAL ==================
+            const soal = [
+                {
+                    tipe: "pg",
+                    tanya: "1. CPU generasi pertama menggunakan teknologi?",
+                    pilihan: { a: "Transistor", b: "Tabung Vakum", c: "IC" },
+                    benar: "b"
+                },
+                {
+                    tipe: "pg",
+                    tanya: "2. Contoh CPU modern saat ini adalah?",
+                    pilihan: { a: "Intel Core i5", b: "ENIAC", c: "UNIVAC" },
+                    benar: "a"
+                },
+                {
+                    tipe: "pg",
+                    tanya: "3. Ukuran CPU klasik pada umumnya adalah?",
+                    pilihan: { a: "Sangat kecil", b: "Sedang", c: "Sangat besar" },
+                    benar: "c"
+                },
+                {
+                    tipe: "pg",
+                    tanya: "4. Keunggulan CPU modern dibanding CPU klasik adalah?",
+                    pilihan: { a: "Lebih cepat & hemat energi", b: "Lebih besar", c: "Lebih boros" },
+                    benar: "a"
+                },
+                {
+                    tipe: "pg",
+                    tanya: "5. Teknologi yang digunakan CPU modern adalah?",
+                    pilihan: { a: "Tabung vakum", b: "IC dan mikroprosesor", c: "Relai mekanik" },
+                    benar: "b"
+                },
+                {
+                    tipe: "pg",
+                    tanya: "6. Intel 4004 termasuk jenis?",
+                    pilihan: { a: "CPU modern", b: "CPU klasik", c: "GPU" },
+                    benar: "b"
+                },
+                {
+                    tipe: "pg",
+                    tanya: "7. Fungsi utama CPU adalah?",
+                    pilihan: { a: "Menyimpan data", b: "Mengolah data", c: "Menampilkan data" },
+                    benar: "b"
+                },
+                {
+                    tipe: "angka",
+                    tanya: "8. Kecepatan CPU modern umumnya sekitar (GHz)?",
+                    pilihan: { a: "0.5", b: "3", c: "50" },
+                    jawaban: 3,
+                    toleransi: 1
+                },
+                {
+                    tipe: "angka",
+                    tanya: "9. CPU generasi pertama berkembang sekitar tahun?",
+                    pilihan: { a: "1950", b: "1980", c: "2015" },
+                    jawaban: 1950,
+                    toleransi: 10
+                },
+                {
+                    tipe: "angka",
+                    tanya: "10. Jumlah core minimum CPU modern umumnya?",
+                    pilihan: { a: "1", b: "2", c: "32" },
+                    jawaban: 2,
+                    toleransi: 1
+                }
+            ];
+
+            // ================== TAMPIL SOAL ==================
+            function tampil() {
+                let q = soal[index];
+                let html = `<h3>${q.tanya}</h3>`;
+
+                html += `
+        <input type="radio" name="jawab" value="a"> ${q.pilihan.a}<br>
+        <input type="radio" name="jawab" value="b"> ${q.pilihan.b}<br>
+        <input type="radio" name="jawab" value="c"> ${q.pilihan.c}<br>
+    `;
+
+                document.getElementById("quiz").innerHTML = html;
+                document.getElementById("nextBtn").style.display = "inline-block";
+            }
+
+            // ================== NEXT ==================
+            function next() {
+                document.getElementById("klik").play();
+                let q = soal[index];
+                let pilih = document.querySelector('input[name="jawab"]:checked');
+
+                if (!pilih) {
+                    alert("Pilih jawaban dulu!");
+                    return;
+                }
+
+                let benarJawaban = false;
+                let value = pilih.value;
+
+                if (q.tipe === "pg") {
+                    if (value === q.benar) benarJawaban = true;
+                }
+
+                if (q.tipe === "angka") {
+                    let angkaUser = parseFloat(q.pilihan[value]);
+                    if (Math.abs(angkaUser - q.jawaban) <= q.toleransi) {
+                        benarJawaban = true;
+                    }
+                }
+
+                if (benarJawaban) {
+                    skor += 10;
+                    document.getElementById("benar").play();
+                } else {
+                    document.getElementById("salah").play();
+                }
+
+                index++;
+
+                if (index < soal.length) {
+                    tampil();
+                } else {
+                    selesaiQuiz();
+                }
+            }
+
+            // ================== TIMER ==================
+            function timer() {
+                if (waktu > 0) {
+                    waktu--;
+                    document.getElementById("timer").innerText = waktu;
+                } else {
+                    selesaiQuiz(true);
+                }
+            }
+
+            // ================== MULAI ==================
+            function mulaiQuiz() {
+                waktu = 180;
+                skor = 0;
+                index = 0;
+
+                document.getElementById("hasil").innerHTML = "";
+                document.getElementById("startBtn").style.display = "none";
+                document.getElementById("ulang").style.display = "none";
+                document.getElementById("timer").innerText = waktu;
+
+                interval = setInterval(timer, 1000);
+                tampil();
+            }
+
+            // ================== SELESAI ==================
+            function selesaiQuiz(waktuHabis = false) {
+                clearInterval(interval);
+                document.getElementById("nextBtn").style.display = "none";
+
+                let nilai =
+                    skor >= 90 ? "A (Sangat Baik)" :
+                        skor >= 70 ? "B (Baik)" :
+                            skor >= 50 ? "C (Cukup)" :
+                                "D (Perlu Belajar Lagi)";
+
+                document.getElementById("quiz").innerHTML = "";
+                document.getElementById("hasil").innerHTML =
+                    (waktuHabis ? "Waktu Habis!<br>" : "Quiz Selesai!<br>") +
+                    "Skor Akhir: " + skor + "<br>Nilai: " + nilai;
+
+                document.getElementById("selesai").play();
+                document.getElementById("ulang").style.display = "inline-block";
+            }
+
+            // ================== ULANG ==================
+            function ulangQuiz() {
+                mulaiQuiz();
+            }
+        </script>
+    </div>
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+
+            /* ================= MULTI PAGE ================= */
+            let currentPage = 0;
+            const pages = document.querySelectorAll(".page");
+
+            function showPage(index) {
+                if (!pages[index]) return;
+                pages.forEach(p => p.classList.remove("active"));
+                pages[index].classList.add("active");
+                currentPage = index;
+            }
+
+            window.goToPage = showPage;
+
+            const prevBtn = document.getElementById("prevBtn");
+            const nextBtn = document.getElementById("nextBtn");
+
+            if (prevBtn) {
+                prevBtn.addEventListener("click", () => {
+                    if (currentPage > 0) showPage(currentPage - 1);
+                });
+            }
+
+            if (nextBtn) {
+                nextBtn.addEventListener("click", () => {
+                    if (currentPage < pages.length - 1) showPage(currentPage + 1);
+                });
+            }
+
+            /* ================= SEARCH ================= */
+            const searchData = [
+                { title: "Pengertian CPU", page: 0 },
+                { title: "Sejarah Singkat CPU", page: 1 },
+                { title: "Tabung Vakum", page: 1 },
+                { title: "Eniac dan Univac", page: 1 },
+                { title: "Struktur CPU", page: 2 },
+                { title: "ALU", page: 2 },
+                { title: "CU", page: 2 },
+                { title: "Register", page: 2 },
+                { title: "Cache", page: 2 },
+                { title: "Perbandingan CPU", page: 3 },
+                { title: "CPU Klasik", page: 3 },
+                { title: "CPU Modern", page: 3 },
+                { title: "Kesimpulan", page: 5 }
+            ];
+
+            const input = document.getElementById("searchInput");
+            const suggestionBox = document.getElementById("suggestionBox");
+
+            window.showSuggestions = function (value) {
+                if (!input || !suggestionBox) return;
+
+                const query = value.toLowerCase();
+                suggestionBox.innerHTML = "";
+
+                if (!query) {
+                    suggestionBox.style.display = "none";
+                    return;
+                }
+
+                const filtered = searchData.filter(item =>
+                    item.title.toLowerCase().includes(query)
+                );
+
+                if (filtered.length === 0) {
+                    suggestionBox.style.display = "none";
+                    return;
+                }
+
+                filtered.forEach(item => {
+                    const li = document.createElement("li");
+                    li.textContent = item.title;
+                    li.onclick = () => {
+                        showPage(item.page);
+                        suggestionBox.style.display = "none";
+                        input.value = "";
+                    };
+                    suggestionBox.appendChild(li);
+                });
+
+                suggestionBox.style.display = "block";
+            };
+
+            document.addEventListener("click", e => {
+                if (!e.target.closest(".search-container")) {
+                    suggestionBox.style.display = "none";
+                }
+            });
+
+        });
+    </script>
+    <script>
+        function showCPU(type) {
+            const content = document.getElementById("cpuContent");
+            const bar = document.getElementById("progressBar");
+
+            if (type === "klasik") {
+                content.innerHTML = `
+      <h3>CPU Klasik</h3>
+      <p>merupakan prosesor generasi awal dengan arsitektur yang masih sederhana.
+        Prosesor ini umumnya hanya mampu mengeksekusi <em>satu instruksi dalam satu
+        waktu sehingga kinerjanya terbatas dan kurang efisien untuk kebutuhan komputasi yang kompleks.</p>
+    `;
+                bar.style.width = "40%";
+            } else {
+                content.innerHTML = `
+      <h3>CPU Modern</h3>
+      <p>CPU ini dirancang dengan arsitektur yang jauh lebih kompleks dan efisien. Prosesor ini mendukung 
+        eksekusi <em>banyak instruksi secara bersamaan melalui teknologi seperti
+        multi-core dan parallel processing, sehingga mampu memberikan performa tinggi dan responsif
+        dalam berbagai aplikasi masa kini..</p>
+    `;
+                bar.style.width = "85%";
+            }
+        }
+    </script>
+
+    <!-- CHAT BUTTON -->
+    <div id="chat-btn">💬</div>
+
+    <!-- CHAT BOX -->
+    <div id="chatbox">
+        <div class="chat-header">
+            Chat CPU Assistant
+            <span id="chat-close">✖</span>
+        </div>
+
+        <div class="chat-body" id="chat-body">
+            <div class="bot">Hai 👋 tanya apa saja tentang CPU!</div>
+        </div>
+
+        <div class="chat-input">
+            <input type="text" id="chat-input" placeholder="Ketik pesan..." />
+            <button onclick="sendMessage()">Kirim</button>
+        </div>
+    </div>
+
+    <script>
+        const chatBtn = document.getElementById("chat-btn");
+        const chatBox = document.getElementById("chatbox");
+        const chatClose = document.getElementById("chat-close");
+        const chatBody = document.getElementById("chat-body");
+
+        chatBtn.onclick = () => chatBox.style.display = "flex";
+        chatClose.onclick = () => chatBox.style.display = "none";
+
+        function sendMessage() {
+            const input = document.getElementById("chat-input");
+            const text = input.value.trim();
+            if (!text) return;
+
+            // user message
+            chatBody.innerHTML += `<div class="user">${text}</div>`;
+            input.value = "";
+
+            // bot response
+            setTimeout(() => {
+                chatBody.innerHTML += `<div class="bot">${botReply(text)}</div>`;
+                chatBody.scrollTop = chatBody.scrollHeight;
+            }, 600);
+        }
+
+        function botReply(text) {
+            text = text.toLowerCase();
+
+            if (text.includes("singkatan")) return "Central Processing unit";
+            if (text.includes("alu")) return "ALU berfungsi untuk operasi aritmatika dan logika.";
+            if (text.includes("cpu")) return "CPU adalah pusat pemrosesan data pada komputer.";
+            if (text.includes("cache")) return "Cache mempercepat akses data yang sering digunakan.";
+            if (text.includes("register")) return "Register adalah penyimpanan kecil super cepat di CPU.";
+            if (text.includes("perbedaan")) return "Perbedaan utama antara CPU klasik (generasi lama seperti Intel Pentium dan Athlon klasik) dan CPU modern (seperti Intel Core generasi terbaru dan AMD Ryzen) terletak pada arsitektur, kinerja, efisiensi daya, dan fitur terintegrasi. CPU modern jauh lebih cepat dan efisien berkat kemajuan teknologi fabrikasi dan desain arsitektur. ";
+
+
+            return "Maaf 🤖 aku hanya bisa menjawab seputar CPU.";
+        }
+    </script>
+</body>
+
+</html>
